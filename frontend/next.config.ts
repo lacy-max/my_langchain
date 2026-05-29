@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 设置项目根目录，解决多个 lockfiles 的问题
+  turbopack: {
+    root: ".",
+  },
   rewrites: async () => {
     return [
       {

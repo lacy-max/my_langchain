@@ -4,6 +4,7 @@ import { PaperClipOutlined } from "@ant-design/icons";
 import { ApiOutlined, LinkOutlined, SearchOutlined } from "@ant-design/icons";
 import { Button, Divider, Flex, Switch, theme } from "antd";
 import React, { useState } from "react";
+import Title from "antd/es/skeleton/Title";
 // 动态导入 Sender，禁用 SSR
 const Sender = dynamic(
   () => import("@ant-design/x").then((mod) => mod.Sender),
@@ -30,6 +31,7 @@ const ChatPage = () => {
       className="flex justify-center items-center w-50"
       style={{ width: "40%" }}
     >
+      <div className="text-[20px] text-[#ff0000]">小懒</div>
       <Sender
         onSubmit={() => {
           setLoading(true);

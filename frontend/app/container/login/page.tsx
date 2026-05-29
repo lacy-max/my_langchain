@@ -1,16 +1,21 @@
 "use client";
+import { auth_login } from "@/app/api/login";
 import { UserOutlined } from "@ant-design/icons";
 import {
   LoginForm,
   ProConfigProvider,
   ProFormText,
 } from "@ant-design/pro-components";
-import { theme } from "antd";
+import { message, theme } from "antd";
+import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const { token } = theme.useToken();
+  const [messageApi, contextHolder] = message.useMessage();
+  const router = useRouter();
 
   return (
     <ProConfigProvider hashed={false}>
+      {contextHolder}
       <div
         style={{ backgroundColor: token.colorBgContainer, minHeight: "100vh" }}
         className=" flex justify-center items-center"
@@ -23,20 +28,17 @@ export default function LoginPage() {
           }
           onFinish={async (values) => {
             const { username, password } = values;
-            const res = await fetch("/api/v1/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username, password }),
-            });
-            const data = await res.json();
-            console.log(data);
+            const res = await auth_login({ username, password });
+            console.log(res, "eeee");
+            if (res.success) {
+              localStorage.setItem("user_id", res.user_id);
+              messageApi.success("登录成功");
+              router.push("/container/chat");
 
-            // if (data.success) {
-            //   localStorage.setItem("user_id", data.user_id);
-            //   // 跳转到聊天页面
-            // } else {
-            //   alert(data.message);
-            // }
+              // 跳转到聊天页面
+            } else {
+              alert(res.message);
+            }
           }}
           className="text-black"
         >

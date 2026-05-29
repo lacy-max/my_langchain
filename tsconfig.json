@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2017",
+    "baseUrl": ".", // 将当前目录作为根路径
+    "paths": {
+      "@/*": ["./*/app"] // 让 @/ 映射到当前目录（即 frontend 根目录）
+    },
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,

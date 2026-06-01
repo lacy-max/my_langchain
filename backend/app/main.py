@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints.login import router as login_router
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from app.core.rag import get_rag
 
+@asynccontextmanager
+async def startup_event():
+    get_rag()
+    yield
 app = FastAPI(title="智能客服系统")
 app.add_middleware(
     CORSMiddleware,

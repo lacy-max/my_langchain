@@ -1,75 +1,71 @@
 "use client";
+
 import dynamic from "next/dynamic";
-import { PaperClipOutlined } from "@ant-design/icons";
-import { ApiOutlined, LinkOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Divider, Flex, Switch, theme } from "antd";
-import React, { useState } from "react";
-import Title from "antd/es/skeleton/Title";
-// 动态导入 Sender，禁用 SSR
-const Sender = dynamic(
-  () => import("@ant-design/x").then((mod) => mod.Sender),
-  { ssr: false }
-);
+import {
+  AntDesignOutlined,
+  CopyOutlined,
+  RedoOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import type { BubbleItemType, BubbleListProps } from "@ant-design/x";
+import type { GetRef } from "antd";
+import { Avatar, Divider, Flex } from "antd";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Sender from "./components/Sender";
+import Bubble from "./components/Bubble";
 
-const ChatPage = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [value, setValue] = useState<string>("");
-  React.useEffect(() => {
-    if (loading) {
-      const timer = setTimeout(() => {
-        setLoading(false);
-        setValue("");
-        console.log("Send message successfully!");
-      }, 2000);
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [loading]);
+let id = 0;
+const getKey = () => `bubble_${id++}`;
+
+// 生成消息
+const genItem = (isAI: boolean, content: string): BubbleItemType => ({
+  key: getKey(),
+  role: isAI ? "ai" : "user",
+  content,
+});
+
+export default function ChatPage() {
+  // 初始消息
+
+  // const handleSend = async () => {
+  //   if (!inputValue.trim() || loading) return;
+
+  //   const userMessage = inputValue.trim();
+  //   // 添加用户消息
+  //   setItems((prev) => [...prev, genItem(false, userMessage)]);
+  //   setInputValue("");
+  //   setLoading(true);
+
+  //   // 模拟 AI 回复（可替换为真实 API 调用）
+  //   setTimeout(() => {
+  //     const aiContent = mockAIResponse(userMessage);
+  //     setItems((prev) => [...prev, genItem(true, aiContent)]);
+  //     setLoading(false);
+  //   }, 800);
+  // };
+
   return (
-    <div
-      className="flex justify-center items-center w-50"
-      style={{ width: "40%" }}
-    >
-      <div className="text-[20px] text-[#ff0000]">小懒</div>
-      <Sender
-        onSubmit={() => {
-          setLoading(true);
+    <Flex vertical style={{ height: "100vh", width: "100%" }} align="center">
+      <div
+        style={{
+          flex: 1,
+          width: "50%",
+          minWidth: 300,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
-        onCancel={() => {
-          setLoading(false);
-        }}
-        suffix={false}
-        value={value}
-        onChange={setValue}
-        autoSize={{ minRows: 2, maxRows: 6 }}
-        placeholder="向小懒提问"
-        footer={(_, { components }) => {
-          const { SendButton, LoadingButton, SpeechButton } = components;
-          return (
-            <Flex justify="space-between" align="center">
-              <Flex gap="small" align="center">
-                <Button
-                  style={{ fontSize: 16 }}
-                  type="text"
-                  icon={<LinkOutlined />}
-                />
-              </Flex>
-              <Flex align="center">
-                <SpeechButton style={{ fontSize: 16 }} />
-                <Divider orientation="vertical" />
-                {loading ? (
-                  <LoadingButton type="default" />
-                ) : (
-                  <SendButton type="primary" disabled={false} />
-                )}
-              </Flex>
-            </Flex>
-          );
-        }}
-      />
-    </div>
-  );
-};
+      >
+        {/* 消息列表区域（可滚动） */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 0" }}>
+          <Bubble />
+        </div>
 
-export default ChatPage;
+        {/* 输入框区域（固定在底部） */}
+        <div style={{ padding: "12px 0 24px", borderTop: "1px solid #f0f0f0" }}>
+          <Sender />
+        </div>
+      </div>
+    </Flex>
+  );
+}

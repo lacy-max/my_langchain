@@ -1,21 +1,10 @@
 "use client";
-
-import dynamic from "next/dynamic";
-import {
-  AntDesignOutlined,
-  CopyOutlined,
-  RedoOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
-import type { BubbleItemType, BubbleListProps } from "@ant-design/x";
-import type { GetRef } from "antd";
-import { Avatar, Divider, Flex } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Flex } from "antd";
+import React, { useState } from "react";
 import Sender from "./components/Sender";
 import Bubble from "./components/Bubble";
 
 let id = 0;
-const getKey = () => `bubble_${id++}`;
 
 // 生成消息
 
@@ -24,24 +13,6 @@ export default function ChatPage() {
     role: "user",
     content: "",
   });
-  // 初始消息
-
-  // const handleSend = async () => {
-  //   if (!inputValue.trim() || loading) return;
-
-  //   const userMessage = inputValue.trim();
-  //   // 添加用户消息
-  //   setItems((prev) => [...prev, genItem(false, userMessage)]);
-  //   setInputValue("");
-  //   setLoading(true);
-
-  //   // 模拟 AI 回复（可替换为真实 API 调用）
-  //   setTimeout(() => {
-  //     const aiContent = mockAIResponse(userMessage);
-  //     setItems((prev) => [...prev, genItem(true, aiContent)]);
-  //     setLoading(false);
-  //   }, 800);
-  // };
   const add = ({ role, content }: { role: string; content: string }) => {
     setValue({ role, content });
   };

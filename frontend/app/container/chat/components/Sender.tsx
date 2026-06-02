@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { LinkOutlined } from "@ant-design/icons";
-import { Button, Divider, Flex, Switch, theme } from "antd";
+import { Button, Divider, Flex } from "antd";
 import React, { useState } from "react";
 import { chat_message } from "@/app/api/chat";
 // 动态导入 Sender，禁用 SSR

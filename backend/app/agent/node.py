@@ -67,7 +67,9 @@ def handle_complaint(state):
         ticket_id = Create_ticket("投诉", last_content)
         prompt = ChatPromptTemplate.from_messages([
             ("system", 
-            f"""你是一个智能客服助手，负责处理用户的投诉咨询。当用户投诉时，她的心情很不好。您需要先安抚用户，表达你非常理解客户的感受，然后根据用户的问题，创建工单。
+            f"""你是一个智能客服助手，负责处理用户的投诉咨询。
+            当用户投诉时，她的心情很不好。
+            您需要先安抚用户，表达你非常理解客户的感受，然后根据用户的问题，创建工单。
             工单号：{ticket_id}"""),
             ("user", "{question}")
         ])
@@ -81,18 +83,19 @@ def handle_after_sales(state):
     """处理售后咨询"""
     last_content = state["messages"][-1].content
     if last_content:
-        ticket_id = Create_ticket("售后", last_content)
         prompt = ChatPromptTemplate.from_messages([
             ("system", 
-            f"""你是一个智能客服助手，负责处理用户的售后咨询。当用户要退货，换货时，为什么具体什么原因，要退或者换，然后你再根据用户提出的问题，给出具体的流程和要求，如果对于你不是特别清楚的，你
-            可以说我会帮你创建工单号，后面会有专业的客服处理。工单号：{ticket_id}
+            f"""当用户表达退货或换货意愿时，严禁直接提供流程或工单号
+            。你的首要任务是表达歉意或理解，
+            并温和地询问用户具体遇到了什么问题（例如：是尺寸不合适、商品有瑕疵，还是单纯不喜欢？）。
+            请保持语气亲切，等待用户回复。
         """),
             ("user", "{question}")
         ])
         chain = prompt | model
         response = chain.invoke({"question": last_content})
         return {
-            "messages": state["messages"] + [{"role": "assistant", "content": response.content + f"工单号：{ticket_id}"}]
+            "messages": state["messages"] + [{"role": "assistant", "content": response.content }]
         }
     pass
 def handle_human(state):

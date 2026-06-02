@@ -3,11 +3,11 @@ def Create_ticket(type,desc):
     """创建工单。当用户投诉或需要售后服务时调用。
         
         Args:
-            type: 问题类型，如：退货、换货、投诉、咨询
+            type: 问题类型，如：退货、换货、投诉、咨询、售后等
             desc: 问题描述
         """
-    if type not in ["退货", "换货", "投诉", "咨询"]:
-        raise ValueError("工单类型必须是退货、换货、投诉或咨询")
+    if type not in ["退货", "换货", "投诉", "咨询","售后"]:
+        raise ValueError("工单类型必须是退货、换货、投诉、咨询或售后")
     if type == "":
         raise ValueError("工单类型不能为空")
     if desc == "":

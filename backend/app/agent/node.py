@@ -1,7 +1,7 @@
 from typing import Any, List, TypedDict
 from langchain_core.prompts import ChatPromptTemplate
-from backend.app.agent.tools import Create_ticket
-from backend.app.core.rag import get_rag
+from app.agent.tools import Create_ticket
+from app.core.rag import get_rag
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.config import model
 
@@ -20,7 +20,7 @@ INTENT_KEYWORDS = {
     IntentEnum.HUMAN: ["人工", "转人工", "客服", "真人"],
 }
 def detect_intent(state: CustomerState):
-      last_content = state["last_message"][-1].content
+      last_content = state["messages"][-1].content
       for intent, keywords in INTENT_KEYWORDS.items():
           if any(kw in last_content for kw in keywords):
             return {"intent": intent}
@@ -28,7 +28,7 @@ def detect_intent(state: CustomerState):
           
 def handle_consult(state):
     """处理咨询 - 回复用户 采用rag检索"""
-    last_content = state["last_message"][-1].content
+    last_content = state["messages"][-1].content
     retriever = get_rag()
     if retriever is not None:
         results = retriever.invoke(last_content)
@@ -62,7 +62,7 @@ def handle_consult(state):
     
 def handle_complaint(state):
     """处理投诉咨询"""
-    last_content = state["last_message"][-1].content
+    last_content = state["messages"][-1].content
     if last_content:
         ticket_id = Create_ticket("投诉", last_content)
         prompt = ChatPromptTemplate.from_messages([
@@ -79,7 +79,7 @@ def handle_complaint(state):
    
 def handle_after_sales(state):
     """处理售后咨询"""
-    last_content = state["last_message"][-1].content
+    last_content = state["messages"][-1].content
     if last_content:
         ticket_id = Create_ticket("售后", last_content)
         prompt = ChatPromptTemplate.from_messages([
@@ -97,7 +97,7 @@ def handle_after_sales(state):
     pass
 def handle_human(state):
     """转人工 - 记录会话到数据库"""
-    last_content = state["last_message"][-1].content
+    last_content = state["messages"][-1].content
     res = AIMessage(content="正在为您转接人工客服，请稍候... 或拨打客服热线 400-123-4567")
     return {"messages": state["messages"] + [res]}
     pass

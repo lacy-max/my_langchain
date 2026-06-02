@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints.login import router as login_router
+from app.api.v1.endpoints.chat import router as chat_router  # 导入 chat 路由
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.rag import get_rag
@@ -11,7 +12,7 @@ async def startup_event():
 app = FastAPI(title="智能客服系统")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],   # 允许的前端地址（可以添加多个）
+    allow_origins=["http://localhost:3000"],   # 允许的前端地址（可以添加多个）
     allow_credentials=True,
     allow_methods=["*"],                       # 允许所有 HTTP 方法（GET, POST, PUT, DELETE 等）
     allow_headers=["*"],                       # 允许所有请求头
@@ -19,6 +20,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(login_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")  # 添加这一行
 
 @app.get("/")
 def root():

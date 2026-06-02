@@ -18,13 +18,12 @@ let id = 0;
 const getKey = () => `bubble_${id++}`;
 
 // 生成消息
-const genItem = (isAI: boolean, content: string): BubbleItemType => ({
-  key: getKey(),
-  role: isAI ? "ai" : "user",
-  content,
-});
 
 export default function ChatPage() {
+  const [value, setValue] = useState<{ role: string; content: string }>({
+    role: "user",
+    content: "",
+  });
   // 初始消息
 
   // const handleSend = async () => {
@@ -43,6 +42,9 @@ export default function ChatPage() {
   //     setLoading(false);
   //   }, 800);
   // };
+  const add = ({ role, content }: { role: string; content: string }) => {
+    setValue({ role, content });
+  };
 
   return (
     <Flex vertical style={{ height: "100vh", width: "100%" }} align="center">
@@ -58,12 +60,12 @@ export default function ChatPage() {
       >
         {/* 消息列表区域（可滚动） */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 0" }}>
-          <Bubble />
+          <Bubble value={value} />
         </div>
 
         {/* 输入框区域（固定在底部） */}
         <div style={{ padding: "12px 0 24px", borderTop: "1px solid #f0f0f0" }}>
-          <Sender />
+          <Sender onAdd={add} />
         </div>
       </div>
     </Flex>

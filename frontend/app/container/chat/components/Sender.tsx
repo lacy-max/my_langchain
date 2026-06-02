@@ -3,13 +3,18 @@ import dynamic from "next/dynamic";
 import { LinkOutlined } from "@ant-design/icons";
 import { Button, Divider, Flex, Switch, theme } from "antd";
 import React, { useState } from "react";
+import { chat_message } from "@/app/api/chat";
 // 动态导入 Sender，禁用 SSR
 const Sender = dynamic(
   () => import("@ant-design/x").then((mod) => mod.Sender),
   { ssr: false }
 );
 
-const ChatPage = () => {
+const ChatPage = ({
+  onAdd,
+}: {
+  onAdd: (value: { role: string; content: string }) => void;
+}) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
   React.useEffect(() => {
@@ -26,8 +31,28 @@ const ChatPage = () => {
   }, [loading]);
   return (
     <Sender
-      onSubmit={() => {
+      onSubmit={async () => {
         setLoading(true);
+        console.log(value, "ddds");
+        if (value.trim() !== "") {
+          onAdd({
+            role: "user",
+            content: value,
+          });
+        }
+        const res = await chat_message({
+          message: value,
+          session_id: "123",
+        });
+        const aiReply = res.data?.reply || res.reply; // 根据实际结构调整
+        if (aiReply) {
+          // 添加用户消息（已经在输入框显示，可能需要额外添加？根据 onAdd 逻辑）
+          // 通常 onAdd 用于添加 AI 回复，用户消息可能已经由输入组件处理
+          onAdd({
+            role: "ai",
+            content: aiReply,
+          }); // 假设 onAdd 是添加 AI 回复到消息列表
+        }
       }}
       onCancel={() => {
         setLoading(false);

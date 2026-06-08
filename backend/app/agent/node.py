@@ -20,7 +20,7 @@ INTENT_KEYWORDS = {
     IntentEnum.HUMAN: ["人工", "转人工", "客服", "真人"],
 }
 def detect_intent(state: CustomerState):
-      last_content = state["messages"][-1].content
+      last_content = trim_messages(state["messages"])[-1].content
       for intent, keywords in INTENT_KEYWORDS.items():
           if any(kw in last_content for kw in keywords):
             return {"intent": intent}
@@ -28,7 +28,7 @@ def detect_intent(state: CustomerState):
           
 def handle_consult(state):
     """处理咨询 - 回复用户 采用rag检索"""
-    last_content = state["messages"][-1].content
+    last_content = trim_messages(state["messages"])[-1].content
     retriever = get_rag()
     if retriever is not None:
         results = retriever.invoke(last_content)
@@ -62,7 +62,7 @@ def handle_consult(state):
     
 def handle_complaint(state):
     """处理投诉咨询"""
-    last_content = state["messages"][-1].content
+    last_content = trim_messages(state["messages"])[-1].content
     if last_content:
         ticket_id = Create_ticket("投诉", last_content)
         prompt = ChatPromptTemplate.from_messages([
@@ -81,7 +81,7 @@ def handle_complaint(state):
    
 def handle_after_sales(state):
     """处理售后咨询"""
-    last_content = state["messages"][-1].content
+    last_content = trim_messages(state["messages"])[-1].content
     if last_content:
         prompt = ChatPromptTemplate.from_messages([
             ("system", 
@@ -100,7 +100,6 @@ def handle_after_sales(state):
     pass
 def handle_human(state):
     """转人工 - 记录会话到数据库"""
-    last_content = state["messages"][-1].content
     res = AIMessage(content="正在为您转接人工客服，请稍候... 或拨打客服热线 400-123-4567")
     return {"messages": state["messages"] + [res]}
     pass
@@ -108,3 +107,17 @@ def route_by_intent(state):
     """根据意图路由"""
     intent = state.get("intent","consult")
     return intent
+
+MAX_TOKENS = 3000
+def trim_messages(messages):
+    # 估算 token 数（简单版：按字符数/2.5 估算，或者用 tiktoken）
+    total = 0
+    trimmed = []
+    for msg in reversed(messages):
+        # 粗略估算：一个中文约 1.5 token，英文约 0.3 token，这里简单按字符数/2
+        tokens = len(msg.content) // 2
+        if total + tokens > MAX_TOKENS:
+            break
+        trimmed.insert(0, msg)
+        total += tokens
+    return trimmed

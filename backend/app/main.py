@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints.login import router as login_router
-from app.api.v1.endpoints.chat import router as chat_router  # 导入 chat 路由
+from app.api.v1.endpoints.chat import router as chat_router
+from app.api.v1.endpoints.products import router as products_router
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.rag import get_rag
@@ -20,7 +21,8 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(login_router, prefix="/api/v1")
-app.include_router(chat_router, prefix="/api/v1")  # 添加这一行
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(products_router, prefix="/api/v1")
 
 @app.get("/")
 def root():

@@ -44,18 +44,18 @@ export default function ProductsPage() {
   };
 
   const columns: ProColumns<Product>[] = [
-    {
-      title: "商品图片",
-      dataIndex: "image",
-      search: false,
-      width: 100,
-      render: (_, record) =>
-        record.image ? (
-          <Image src={record.image} alt={record.name} width={60} height={60} style={{ objectFit: "cover" }} />
-        ) : (
-          "-"
-        ),
-    },
+    // {
+    //   title: "商品图片",
+    //   dataIndex: "image",
+    //   search: false,
+    //   width: 100,
+    //   render: (_, record) =>
+    //     record.image ? (
+    //       <Image src={record.image} alt={record.name} width={60} height={60} style={{ objectFit: "cover" }} />
+    //     ) : (
+    //       "-"
+    //     ),
+    // },
     {
       title: "商品名称",
       dataIndex: "name",
@@ -72,8 +72,14 @@ export default function ProductsPage() {
       title: "系列",
       dataIndex: "category",
       valueType: "select",
-      valueEnum: Object.fromEntries(PRODUCT_CATEGORIES.map((c) => [c, { text: c }])),
-      render: (_, record) => <Tag color={categoryColors[record.category] || "default"}>{record.category}</Tag>,
+      valueEnum: Object.fromEntries(
+        PRODUCT_CATEGORIES.map((c) => [c, { text: c }])
+      ),
+      render: (_, record) => (
+        <Tag color={categoryColors[record.category] || "default"}>
+          {record.category}
+        </Tag>
+      ),
     },
     {
       title: "描述",
@@ -87,7 +93,8 @@ export default function ProductsPage() {
       dataIndex: "created_at",
       search: false,
       width: 180,
-      render: (_, record) => new Date(record.created_at).toLocaleString("zh-CN"),
+      render: (_, record) =>
+        new Date(record.created_at).toLocaleString("zh-CN"),
     },
     {
       title: "操作",
@@ -103,7 +110,10 @@ export default function ProductsPage() {
           >
             编辑
           </a>
-          <Popconfirm title="确认删除该商品？" onConfirm={() => handleDelete(record.id)}>
+          <Popconfirm
+            title="确认删除该商品？"
+            onConfirm={() => handleDelete(record.id)}
+          >
             <a style={{ color: "#ff4d4f" }}>删除</a>
           </Popconfirm>
         </Space>
@@ -210,8 +220,16 @@ export default function ProductsPage() {
           options={PRODUCT_CATEGORIES.map((c) => ({ label: c, value: c }))}
           rules={[{ required: true, message: "请选择系列" }]}
         />
-        <ProFormText name="image" label="图片地址" placeholder="如 /images/gold.jpg" />
-        <ProFormTextArea name="description" label="商品描述" fieldProps={{ rows: 3 }} />
+        <ProFormText
+          name="image"
+          label="图片地址"
+          placeholder="如 /images/gold.jpg"
+        />
+        <ProFormTextArea
+          name="description"
+          label="商品描述"
+          fieldProps={{ rows: 3 }}
+        />
       </ModalForm>
     </>
   );

@@ -27,8 +27,11 @@ export default function LoginPage() {
         }}
       >
         <LoginForm
-          title="商品管理后台"
-          subTitle="React + Ant Design Pro"
+          title={
+            <>
+              <div style={{ marginBottom: 20 }}>管理后台系统</div>
+            </>
+          }
           onFinish={async (values) => {
             const { username, password } = values;
             try {
@@ -36,7 +39,7 @@ export default function LoginPage() {
               if (res.success) {
                 localStorage.setItem("user_id", res.user_id);
                 message.success("登录成功");
-                router.push("/products");
+                router.push("/container/products");
               }
             } catch (err) {
               message.error(err instanceof Error ? err.message : "登录失败");

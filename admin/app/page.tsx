@@ -8,7 +8,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const userId = localStorage.getItem("user_id");
-    router.replace(userId ? "/container/products" : "/container/login");
+    router.replace(userId ? "/container/products" : "/login");
   }, [router]);
 
   return null;

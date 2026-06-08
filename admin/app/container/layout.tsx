@@ -21,7 +21,7 @@ export default function AdminLayout({
     setMounted(true);
     const userId = localStorage.getItem("user_id");
     if (!userId) {
-      router.replace("/container/login");
+      router.replace("/login");
     }
   }, [router]);
 
@@ -65,7 +65,7 @@ export default function AdminLayout({
                   onClick: () => {
                     localStorage.removeItem("user_id");
                     message.success("已退出登录");
-                    router.push("/container/login");
+                    router.push("/login");
                   },
                 },
               ],

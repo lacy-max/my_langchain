@@ -1,14 +1,25 @@
 from fastapi import FastAPI
+from fastapi import APIRouter, HTTPException
 from app.api.v1.endpoints.login import router as login_router
-from app.api.v1.endpoints.chat import router as chat_router
 from app.api.v1.endpoints.products import router as products_router
+from app.api.v1.endpoints.stores import router as stores_router
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.core.rag import get_rag
+
+try:
+    from app.api.v1.endpoints.chat import router as chat_router
+except ModuleNotFoundError as exc:
+    chat_router = APIRouter(prefix="/chat", tags=["聊天"])
+
+    @chat_router.post("")
+    async def chat_unavailable():
+        raise HTTPException(
+            status_code=503,
+            detail=f"聊天服务依赖未安装或版本不兼容：{exc.name}",
+        )
 
 @asynccontextmanager
 async def startup_event():
-    get_rag()
     yield
 app = FastAPI(title="智能客服系统")
 app.add_middleware(
@@ -23,6 +34,7 @@ app.add_middleware(
 app.include_router(login_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(products_router, prefix="/api/v1")
+app.include_router(stores_router, prefix="/api/v1")
 
 @app.get("/")
 def root():

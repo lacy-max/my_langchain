@@ -44,7 +44,7 @@ const ChatPage = ({
           message: value,
           session_id: "123",
         });
-        const aiReply = res.data?.reply || res.reply; // 根据实际结构调整
+        const aiReply = res.data?.reply;
         if (aiReply) {
           // 添加用户消息（已经在输入框显示，可能需要额外添加？根据 onAdd 逻辑）
           // 通常 onAdd 用于添加 AI 回复，用户消息可能已经由输入组件处理

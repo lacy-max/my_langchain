@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Layout from "@/app/components/layout";
 import { fetchProducts } from "@/app/api/products";
 import {
@@ -28,6 +29,24 @@ function getFallbackImage(category: string) {
   );
 }
 
+function ProductImage({ product }: { product: Product }) {
+  const [src, setSrc] = useState(
+    product.image || getFallbackImage(product.category),
+  );
+
+  return (
+    <Image
+      src={src}
+      alt={product.name}
+      width={200}
+      height={210}
+      onError={() => setSrc(getFallbackImage(product.category))}
+      className="max-h-[210px] max-w-[78%] h-auto w-auto object-contain transition duration-700 group-hover:scale-105"
+      sizes="(max-width: 1180px) 25vw, 280px"
+    />
+  );
+}
+
 export default function ProductsPage() {
   const [category, setCategory] = useState<ProductCategory>("黄金系列");
   const [products, setProducts] = useState<Product[]>([]);
@@ -39,7 +58,11 @@ export default function ProductsPage() {
 
   const loadProducts = useCallback(
     async (targetPage: number, append: boolean) => {
-      append ? setLoadingMore(true) : setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError("");
       try {
         const res = await fetchProducts({
@@ -47,9 +70,7 @@ export default function ProductsPage() {
           page_size: PAGE_SIZE,
           category,
         });
-        setProducts((prev) =>
-          append ? [...prev, ...res.data] : res.data
-        );
+        setProducts((prev) => (append ? [...prev, ...res.data] : res.data));
         setTotal(res.total);
         setPage(targetPage);
       } catch (err) {
@@ -63,7 +84,7 @@ export default function ProductsPage() {
         setLoadingMore(false);
       }
     },
-    [category]
+    [category],
   );
 
   useEffect(() => {
@@ -75,10 +96,13 @@ export default function ProductsPage() {
   return (
     <Layout>
       <section className="relative h-[420px] overflow-hidden bg-[#f8f2e8]">
-        <img
+        <Image
           src="/images/products-banner1.png"
           alt="产品系列"
-          className="h-[420px] w-full object-cover pt-[76px]"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
         />
       </section>
 
@@ -120,21 +144,14 @@ export default function ProductsPage() {
             暂无商品
           </p>
         ) : (
-          <div className="mx-auto grid max-w-[1180px] grid-cols-4 gap-6">
+          <div className="mx-auto grid max-w-[1180px] grid-cols-4 gap-6 mb-[20px]">
             {products.map((item) => (
               <div
                 key={item.id}
                 className="group overflow-hidden rounded-sm bg-[#090806] shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl"
               >
                 <div className="flex h-[260px] items-center justify-center overflow-hidden">
-                  <img
-                    src={item.image || getFallbackImage(item.category)}
-                    alt={item.name}
-                    onError={(e) => {
-                      e.currentTarget.src = getFallbackImage(item.category);
-                    }}
-                    className="max-h-[210px] max-w-[78%] object-contain transition duration-700 group-hover:scale-105"
-                  />
+                  <ProductImage key={item.id} product={item} />
                 </div>
 
                 <div className="border-t border-[#d6b165]/20 px-6 py-5 text-center">

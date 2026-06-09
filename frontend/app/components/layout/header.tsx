@@ -93,7 +93,7 @@ function Header() {
 
       {/* Right */}
       <div className="flex items-center gap-6">
-        <Link href="/ai-chat">
+        <Link href="/container/chat">
           <div
             className="
               flex

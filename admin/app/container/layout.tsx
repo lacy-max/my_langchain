@@ -1,6 +1,6 @@
 "use client";
 
-import { LogoutOutlined, ShoppingOutlined } from "@ant-design/icons";
+import { LogoutOutlined, ShopOutlined, ShoppingOutlined } from "@ant-design/icons";
 import { ProLayout } from "@ant-design/pro-components";
 import { App, Dropdown } from "antd";
 import Link from "next/link";
@@ -43,6 +43,11 @@ export default function AdminLayout({
             path: "/container/products",
             name: "商品管理",
             icon: <ShoppingOutlined />,
+          },
+          {
+            path: "/container/stores",
+            name: "门店管理",
+            icon: <ShopOutlined />,
           },
         ],
       }}

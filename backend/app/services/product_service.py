@@ -119,10 +119,13 @@ def list_products(
     page: int = 1,
     page_size: int = 10,
     keyword: str | None = None,
+    category: str | None = None,
 ) -> tuple[list[Product], int]:
     _seed_products()
 
     items = list(PRODUCTS.values())
+    if category:
+        items = [p for p in items if p.category == category]
     if keyword:
         keyword_lower = keyword.lower()
         items = [

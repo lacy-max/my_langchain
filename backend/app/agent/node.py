@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, TypedDict
 
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 
 from app.agent.tools import Create_ticket
@@ -24,7 +24,25 @@ class IntentEnum(str):
 
 
 INTENT_KEYWORDS = {
-    IntentEnum.AFTER_SALES: ["退货", "换货", "售后", "维修", "保养", "质量问题"],
+    IntentEnum.AFTER_SALES: [
+        "退货",
+        "换货",
+        "售后",
+        "维修",
+        "保养",
+        "质量问题",
+        "断了",
+        "坏了",
+        "破损",
+        "损坏",
+        "瑕疵",
+        "掉钻",
+        "开裂",
+        "变形",
+        "项链断",
+        "衣服质量",
+        "商品质量",
+    ],
     IntentEnum.COMPLAINT: ["投诉", "不满意", "态度差", "举报", "差评"],
     IntentEnum.HUMAN: ["人工", "转人工", "客服", "真人", "电话"],
 }
@@ -86,14 +104,31 @@ def handle_complaint(state: CustomerState):
 def handle_after_sales(state: CustomerState):
     question = _last_user_text(state["messages"])
     docs = get_rag().search(question, k=3)
+    if _is_quality_issue(question):
+        reply = _build_quality_after_sales_reply(question)
+        return {
+            "messages": state["messages"] + [AIMessage(content=reply)],
+            "sources": [
+                {
+                    "source": doc.source,
+                    "score": str(doc.score),
+                    "content": doc.content[:160],
+                }
+                for doc in docs
+            ],
+        }
+
     context = "\n\n".join(doc.content for doc in docs)
     reply = _invoke_llm(
         question,
         context,
-        extra_instruction="用户正在咨询售后，请先表达理解，再给出可执行步骤。",
+        extra_instruction=(
+            "用户正在咨询售后。回复必须简短，像真人客服：先安抚，再给出下一步。"
+            "不要大段解释政策，不要复制知识库条款。"
+        ),
     )
     if reply is None:
-        reply = _build_fallback_answer(question, docs, prefix="我理解您想处理售后问题。")
+        reply = _build_after_sales_reply(question)
     return {
         "messages": state["messages"] + [AIMessage(content=reply)],
         "sources": [
@@ -106,10 +141,7 @@ def handle_after_sales(state: CustomerState):
 def handle_human(state: CustomerState):
     human_request_count = state.get("human_request_count", 0) + 1
     if human_request_count < 3:
-        reply = (
-            "我可以先帮您看一下。请问您具体遇到了什么问题？"
-            "比如珠宝选购、门店服务、物流发票或售后问题，我都可以先为您解答。"
-        )
+        reply = "请问您遇到什么问题了？我也可以先帮您看看哦。"
     else:
         reply = (
             "好的，已为您转接人工客服，请稍候。"
@@ -181,3 +213,42 @@ def _extract_ticket_id(text: str) -> str:
         return ""
     return text[index : index + 12]
 
+
+def _build_quality_after_sales_reply(text: str) -> str:
+    action = "办理退货退款" if _wants_return(text) else "安排退换货或其他售后方案"
+    return (
+        "很抱歉给您带来不好的购物体验。关于商品质量问题，请您提供订单号、问题照片或视频，以及签收时间。"
+        f"我们会优先为您核实处理；若商品符合质量问题售后条件，会协助您尽快{action}。"
+    )
+
+
+def _build_after_sales_reply(text: str) -> str:
+    if _is_quality_issue(text):
+        return _build_quality_after_sales_reply(text)
+
+    return (
+        "很抱歉给您带来不便。请您提供订单号、商品情况和相关凭证，我会帮您尽快核实处理。"
+    )
+
+
+def _is_quality_issue(text: str) -> bool:
+    keywords = [
+        "断了",
+        "坏了",
+        "破损",
+        "损坏",
+        "瑕疵",
+        "掉钻",
+        "开裂",
+        "变形",
+        "质量问题",
+        "项链断",
+        "衣服质量",
+        "商品质量",
+    ]
+    return any(keyword in text for keyword in keywords)
+
+
+def _wants_return(text: str) -> bool:
+    keywords = ["退货", "退款", "退掉", "不要了", "退换货"]
+    return any(keyword in text for keyword in keywords)

@@ -25,6 +25,7 @@ class Request {
     this.instance = axios.create({
       baseURL,
       timeout: 30000, // 30秒超时
+      withCredentials: true,
       headers: {
         "Content-Type": "application/json",
       },

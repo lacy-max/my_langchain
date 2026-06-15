@@ -1,9 +1,16 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Bot, Crown, Send, Sparkles, UserRound } from "lucide-react";
 import Layout from "@/app/components/layout";
-import { chatMessage, type ChatSource } from "@/app/api/chat";
+import {
+  chatMessage,
+  fetchChatHistory,
+  type ChatSource,
+} from "@/app/api/chat";
+import { fetchProducts } from "@/app/api/products";
+import type { Product } from "@/app/types/product";
 
 type ChatMessage = {
   id: string;
@@ -15,37 +22,96 @@ type ChatMessage = {
 };
 
 const starters = ["推荐礼物", "退货流程", "会员权益", "门店服务"];
-
-function createSessionId() {
-  if (typeof window === "undefined") {
-    return "web-session";
-  }
-  const cached = window.localStorage.getItem("chat_session_id");
-  if (cached) {
-    return cached;
-  }
-  const next = `web-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  window.localStorage.setItem("chat_session_id", next);
-  return next;
-}
+const SESSION_ID = "primary";
+const WELCOME_MESSAGE: ChatMessage = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "您好，我是萃华 AI 珠宝顾问。您可以咨询珠宝选购、门店服务、会员权益、物流发票与售后问题。",
+};
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "您好，我是萃华 AI 珠宝顾问。您可以咨询珠宝选购、门店服务、会员权益、物流发票与售后问题。",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
-  const sessionId = useMemo(createSessionId, []);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [productCatalog, setProductCatalog] = useState<Product[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchChatHistory(SESSION_ID)
+      .then((response) => {
+        if (!active) {
+          return;
+        }
+        const history = response.data.map((item) => ({
+          id: item.id,
+          role: item.role,
+          content: item.content,
+          intent: item.intent,
+          ticketId: item.ticket_id,
+          sources: item.sources,
+        }));
+        setMessages(history.length > 0 ? history : [WELCOME_MESSAGE]);
+      })
+      .catch(() => {
+        if (active) {
+          setMessages([WELCOME_MESSAGE]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setHistoryLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchProducts({ page: 1, page_size: 100 })
+      .then((response) => {
+        if (!active) {
+          return;
+        }
+        setProductCatalog(response.data);
+      })
+      .catch(() => {
+        if (active) {
+          setProductCatalog([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const container = messagesContainerRef.current;
+      if (!container) {
+        return;
+      }
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
     const question = text.trim();
-    if (!question || loading) {
+    if (!question || loading || historyLoading) {
       return;
     }
 
@@ -61,12 +127,12 @@ export default function ChatPage() {
     try {
       const res = await chatMessage({
         message: question,
-        session_id: sessionId,
+        session_id: SESSION_ID,
       });
       setMessages((prev) => [
         ...prev,
         {
-          id: `assistant-${Date.now()}`,
+          id: res.data.message_id || `assistant-${Date.now()}`,
           role: "assistant",
           content: res.data.reply,
           intent: res.data.intent,
@@ -116,15 +182,28 @@ export default function ChatPage() {
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
             <section className="rounded-[8px] border border-white/80 bg-white/76 shadow-[0_24px_80px_rgba(128,92,43,0.13)] backdrop-blur">
-              <div className="max-h-[620px] min-h-[520px] overflow-y-auto px-6 py-7 md:px-8">
+              <div
+                ref={messagesContainerRef}
+                className="max-h-[620px] min-h-[520px] overflow-y-auto px-6 py-7 md:px-8"
+              >
                 <div className="space-y-6">
                   {messages.map((message) => (
-                    <MessageBubble key={message.id} message={message} />
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      productCatalog={productCatalog}
+                    />
                   ))}
+                  {historyLoading && (
+                    <div className="flex items-center gap-3 text-[#8d7a64]">
+                      <Bot className="h-5 w-5 text-[#b88945]" />
+                      <span>正在加载历史记录...</span>
+                    </div>
+                  )}
                   {loading && (
                     <div className="flex items-center gap-3 text-[#8d7a64]">
                       <Bot className="h-5 w-5 text-[#b88945]" />
-                      <span>正在查询知识库...</span>
+                      <span>正在帮您查询...</span>
                     </div>
                   )}
                 </div>
@@ -144,7 +223,7 @@ export default function ChatPage() {
                   ))}
                 </div>
 
-                <div className="flex gap-3 rounded-[8px] border border-[#e0d3bf] bg-[#fffdf8] p-3">
+                <div className="flex min-h-[96px] items-center gap-3 rounded-[8px] border border-[#e0d3bf] bg-[#fffdf8] px-4 py-4">
                   <textarea
                     ref={inputRef}
                     value={value}
@@ -156,13 +235,13 @@ export default function ChatPage() {
                       }
                     }}
                     placeholder="请输入您的问题..."
-                    className="min-h-[54px] flex-1 resize-none bg-transparent px-2 py-2 leading-7 text-[#2a2118] outline-none"
+                    className="h-12 min-h-12 max-h-24 flex-1 resize-none bg-transparent px-2 py-2 leading-8 text-[#2a2118] outline-none"
                   />
                   <button
                     type="button"
-                    disabled={loading || value.trim() === ""}
+                    disabled={historyLoading || loading || value.trim() === ""}
                     onClick={() => sendMessage(value)}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#b88945] text-white transition hover:bg-[#9a6a2f] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#b88945] text-white transition hover:bg-[#9a6a2f] disabled:cursor-not-allowed disabled:opacity-45"
                     aria-label="发送"
                   >
                     <Send className="h-5 w-5" />
@@ -180,16 +259,20 @@ export default function ChatPage() {
               </div>
               <h2 className="mt-5 text-[28px] font-normal">知识库范围</h2>
               <div className="mt-6 grid gap-3 text-[#6b5745]">
-                {["退货与售后", "发货与物流", "会员与积分", "支付与发票", "人工客服"].map(
-                  (item) => (
-                    <div
-                      key={item}
-                      className="rounded-full border border-[#e0d3bf] bg-[#fbf7ef] px-5 py-3"
-                    >
-                      {item}
-                    </div>
-                  ),
-                )}
+                {[
+                  "退货与售后",
+                  "发货与物流",
+                  "会员与积分",
+                  "支付与发票",
+                  "人工客服",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-full border border-[#e0d3bf] bg-[#fbf7ef] px-5 py-3"
+                  >
+                    {item}
+                  </div>
+                ))}
               </div>
             </aside>
           </div>
@@ -199,11 +282,19 @@ export default function ChatPage() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  productCatalog,
+}: {
+  message: ChatMessage;
+  productCatalog: Product[];
+}) {
   const isUser = message.role === "user";
 
   return (
-    <article className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+    <article
+      className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
+    >
       {!isUser && (
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f3e4cf] text-[#b88945]">
           <Bot className="h-5 w-5" />
@@ -217,8 +308,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             : "border border-[#eadfce] bg-[#fffdf8] text-[#3a2b1e]"
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
-        {!isUser && (message.intent || message.ticketId || message.sources?.length) && (
+        <p className="whitespace-pre-wrap">
+          <MessageContent
+            content={message.content}
+            productCatalog={productCatalog}
+          />
+        </p>
+        {/* {!isUser && (message.intent || message.ticketId || message.sources?.length) && (
           <div className="mt-4 border-t border-[#eadfce] pt-3 text-sm text-[#8d7a64]">
             {message.intent && <p>意图：{message.intent}</p>}
             {message.ticketId && <p>工单：{message.ticketId}</p>}
@@ -226,7 +322,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
               <p>来源：{message.sources.map((source) => source.source).join("、")}</p>
             )}
           </div>
-        )}
+        )} */}
       </div>
 
       {isUser && (
@@ -238,3 +334,101 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+function MessageContent({
+  content,
+  productCatalog,
+}: {
+  content: string;
+  productCatalog: Product[];
+}) {
+  const productLinkPattern =
+    /(\[[^\]]+\]\(\/container\/products\/[^)\s]+\)|\/container\/products\/[A-Za-z0-9-]+)/g;
+  const parts = content.split(productLinkPattern);
+  const mentionedProducts = productCatalog
+    .filter((product) => content.includes(product.name))
+    .sort(
+      (left, right) =>
+        content.indexOf(left.name) - content.indexOf(right.name),
+    );
+
+  return parts.map((part, index) => {
+    const markdownMatch = part.match(
+      /^\[([^\]]+)\]\((\/container\/products\/[^)\s]+)\)$/,
+    );
+    if (markdownMatch) {
+      const matchedProduct = productCatalog.find(
+        (product) =>
+          markdownMatch[1].includes(product.name) ||
+          product.name.includes(markdownMatch[1]),
+      );
+      return (
+        <ProductMessageLink
+          key={`${markdownMatch[2]}-${index}`}
+          href={
+            matchedProduct
+              ? `/container/products/${matchedProduct.id}`
+              : markdownMatch[2]
+          }
+          label={compactProductTitle(
+            matchedProduct?.name || markdownMatch[1],
+          )}
+        />
+      );
+    }
+
+    if (/^\/container\/products\/[A-Za-z0-9-]+$/.test(part)) {
+      const productId = part.split("/").pop() ?? "";
+      const currentProduct = productCatalog.find(
+        (product) => product.id === productId,
+      );
+      const linkPosition = parts
+        .slice(0, index)
+        .filter((item) =>
+          /^\/container\/products\/[A-Za-z0-9-]+$/.test(item),
+        ).length;
+      const product = currentProduct || mentionedProducts[linkPosition];
+      return (
+        <ProductMessageLink
+          key={`${part}-${index}`}
+          href={
+            product ? `/container/products/${product.id}` : part
+          }
+          label={
+            product ? compactProductTitle(product.name) : "商品详情"
+          }
+        />
+      );
+    }
+
+    return <span key={`${index}-${part}`}>{part}</span>;
+  });
+}
+
+function ProductMessageLink({
+  href,
+  label,
+}: {
+  href: string;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="font-medium text-[#9a6a2f] underline decoration-[#b88945] decoration-1 underline-offset-4 transition hover:text-[#714719]"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function compactProductTitle(title: string) {
+  const normalized = title
+    .replace(/[（(].*?[）)]/g, "")
+    .replace(/\s+/g, "")
+    .trim();
+
+  if (normalized.length <= 4) {
+    return normalized || "商品详情";
+  }
+  return normalized.slice(0, 4);
+}

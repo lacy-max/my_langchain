@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Layout from "@/app/components/layout";
 import { fetchProducts } from "@/app/api/products";
 import {
@@ -146,9 +147,11 @@ export default function ProductsPage() {
         ) : (
           <div className="mx-auto grid max-w-[1180px] grid-cols-4 gap-6 mb-[20px]">
             {products.map((item) => (
-              <div
+              <Link
                 key={item.id}
+                href={`/container/products/${item.id}`}
                 className="group overflow-hidden rounded-sm bg-[#090806] shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl"
+                aria-label={`查看${item.name}详情`}
               >
                 <div className="flex h-[260px] items-center justify-center overflow-hidden">
                   <ProductImage key={item.id} product={item} />
@@ -162,7 +165,7 @@ export default function ProductsPage() {
                     {formatPrice(item.price)}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

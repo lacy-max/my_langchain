@@ -5,6 +5,7 @@ from app.api.v1.endpoints.products import router as products_router
 from app.api.v1.endpoints.stores import router as stores_router
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from app.services.chat_history_service import initialize_database
 
 try:
     from app.api.v1.endpoints.chat import router as chat_router
@@ -19,9 +20,10 @@ except ModuleNotFoundError as exc:
         )
 
 @asynccontextmanager
-async def startup_event():
+async def startup_event(app: FastAPI):
+    initialize_database()
     yield
-app = FastAPI(title="智能客服系统")
+app = FastAPI(title="智能客服系统", lifespan=startup_event)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000","http://localhost:3001"],   # 允许的前端地址（可以添加多个）
